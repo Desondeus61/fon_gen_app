@@ -5,48 +5,95 @@ import PageLoader from "@/components/layouts/loader";
 import { LeftSideBar } from "@/components/layouts/leftSidebar";
 import UserPrompt from "@/components/chat/UserPrompt";
 import BotMessage from "@/components/chat/BotMessage";
-import react,{useState} from "react";
+import react, { useState } from "react";
 import FonKeyBoard from "@/components/clavier/KeyBoard";
 import EmptyChat from "@/components/chat/EmptyChat";
+import Info from "@/components/chat/Info";
 const inter = Inter({ subsets: ["latin"] });
 
-export default function Home() {
-  const [prompt,setPrompt]=useState('');
-  const [showKeyboard,setShowKeyboard]=useState(false);
-  const [discussions,setDiscussions]=useState([]);
-  
+import axios from "axios";
+import FormData from "form-data";
 
-  async function generate_image(prompt){
-    const discussion_temp=discussions;
-    discussion_temp.push({user:'user',prompt: prompt});
+export default function Home() {
+  const [prompt, setPrompt] = useState("");
+  const [showKeyboard, setShowKeyboard] = useState(false);
+  const [showInfo, setShowInfo] = useState(true);
+  const [discussions, setDiscussions] = useState([]);
+
+
+
+
+// Fonction pour générer et récupérer une image à partir de l'API
+const generateImageFromPrompt = async (prompt) => {
+  const formData = new FormData();
+  formData.append("prompt", prompt);
+  formData.append("output_format", "jpeg");
+
+  try {
+    const response = await axios.post(
+      "https://api.stability.ai/v2beta/stable-image/generate/sd3",
+      formData,
+      {
+        headers: {
+          Authorization: `Bearer sk-svrR7cb2mWDAf88m8QJMPYKfXSOCkDT06TzC6s9aOnwQv0sl`,
+          ...formData.getHeaders()
+        },
+        responseType: "arraybuffer"
+      }
+    );
+
+    if (response.status === 200) {
+      const imageData = Buffer.from(response.data).toString("base64");
+      return `data:image/jpeg;base64,${imageData}`;
+    } else {
+      throw new Error(`${response.status}: ${response.data.toString()}`);
+    }
+  } catch (error) {
+    console.error("Error:", error.message);
+    return null;
+  }
+};
+
+  async function generate_image(prompt) {
+    const discussion_temp = discussions;
+    discussion_temp.push({ user: "user", prompt: prompt });
     setDiscussions(discussion_temp);
-    discussion_temp.push({user:'ia',prompt: prompt,loading:true});
+    discussion_temp.push({ user: "ia", prompt: prompt, loading: true });
+    setDiscussions(discussion_temp);
     //user prompt
 
     //ia generate
-    try {
-      const request=await fetch('http://localhost:8000/generate-image',{
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        credentials: "include",
+    generateImageFromPrompt(prompt)
+  .then((imageDataUrl) => {
+    if (imageDataUrl) {
+      // Utilisez l'URL de l'image pour l'afficher dans votre application
+      console.log("Image URL:", );
+      discussion_temp.push({
+        user: "ia",
+        response: "Response of IA",
+        prompt: prompt,
+        image:imageDataUrl,
+        loading: false,
       });
-      const response= await request.json();
-      console.log(response);
-    } catch (error) {
-      
+    } else {
+      console.log("Failed to generate image.");
     }
-   
-    discussion_temp.pop();
-    discussion_temp.push({user:'ia',response: 'Response of IA',prompt: prompt,loading:false});
+  })
+  .catch((error) => {
+    console.error("Error:", error);
+  });
     setDiscussions(discussion_temp);
-    setPrompt('');
-
-
+    setPrompt("");
   }
   return (
     <>
+    {showInfo && (
+                <Info
+                  showInfo={() => {
+                    setShowInfo(!showInfo);
+                  }}
+                />
+              )}
       <main className="page-wrapper rbt-dashboard-page">
         <div className="rbt-panel-wrapper">
           <Header />
@@ -67,31 +114,57 @@ export default function Home() {
                 <div className="content-page">
                   <div className="chat-box-list pt--30" id="chatContainer">
                     {/* <!-- Image Generator --> */}
-                    {discussions.length >0 ? discussions.map((message)=>{
-                      if(message?.user=='user' ){
-                        return <UserPrompt message={message?.prompt} prompt={message?.prompt} />;
-                      }else{
-                        return (<BotMessage message={message?.response} prompt={message?.prompt} loading={message?.loading} />)
-                      }
-                    }) : (
-                      <EmptyChat onClickSuggested={(m)=>{setPrompt(m)}} />
-                    ) }
+                    {discussions.length > 0 ? (
+                      discussions.map((message) => {
+                        if (message?.user == "user") {
+                          return (
+                            <UserPrompt
+                              message={message?.prompt}
+                              prompt={message?.prompt}
+                            />
+                          );
+                        } else {
+                          return (
+                            <BotMessage
+                              message={message?.response}
+                              prompt={message?.prompt}
+                              loading={message?.loading}
+                            />
+                          );
+                        }
+                      })
+                    ) : (
+                      <EmptyChat
+                        onClickSuggested={(m) => {
+                          setPrompt(m);
+                        }}
+                      />
+                    )}
                   </div>
                 </div>
 
                 <div className="rbt-static-bar">
-                  <form className="new-chat-form border-gradient"  >
+                  <form className="new-chat-form border-gradient">
                     <textarea
                       id="txtarea"
                       rows="1"
                       value={prompt}
                       placeholder="Send a message..."
-                      onChange={(e)=>{
+                      onChange={(e) => {
                         console.log(e.target.value);
                         setPrompt(e.target.value);
                       }}
                     ></textarea>
-                    <div className="left-icons"> <button type="button" onClick={()=>{ setShowKeyboard(!showKeyboard) }} title="Clavier Fon" className="form-icon icon-keyboard">
+                    <div className="left-icons">
+                      {" "}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowKeyboard(!showKeyboard);
+                        }}
+                        title="Clavier Fon"
+                        className="form-icon icon-keyboard"
+                      >
                         <i className="feather-type"></i>
                       </button>
                     </div>
@@ -125,7 +198,7 @@ export default function Home() {
                         className="form-icon icon-send"
                         type="button"
                         id="sendButton"
-                        onClick={()=>generate_image(prompt)}
+                        onClick={() => generate_image(prompt)}
                         data-bs-toggle="tooltip"
                         data-bs-placement="top"
                         data-bs-custom-className="custom-tooltip"
@@ -135,13 +208,17 @@ export default function Home() {
                       </button>
                     </div>
                   </form>
-                  {showKeyboard &&  <FonKeyBoard onKeyup={(c)=>{
-                    setPrompt((precedPrompt)=>{
-                      const p=precedPrompt+c;
-                      return p;
-                    })
-                  } } /> }
-                 
+                  {showKeyboard && (
+                    <FonKeyBoard
+                      onKeyup={(c) => {
+                        setPrompt((precedPrompt) => {
+                          const p = precedPrompt + c;
+                          return p;
+                        });
+                      }}
+                    />
+                  )}
+
                   <p className="b3 small-text">
                     BlaymaxAI can make mistakes. Consider checking important
                     information.
@@ -150,7 +227,7 @@ export default function Home() {
               </div>
 
               {/* <!-- Dashboard Right Content --> */}
-
+              
             </div>
           </div>
         </div>

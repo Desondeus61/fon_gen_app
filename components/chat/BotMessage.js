@@ -33,14 +33,10 @@ export default function BotMessage({response,prompt,image,loading=true}){
                             <img
                               className="w-100"
                               src="/assets/images/team/avater.png"
-                              alt="ChatenAI"
+                              alt="BlayAi"
                             />
                           </div>
                           <div className="chat-content">
-                            <h6 className="title mb--20">
-                              Certainly! Your visual representation has been
-                              created using the provided prompt:
-                            </h6>
 
                             <div className="image-caption mb--20">
                               <h5 className="caption-title theme-gradient">
