@@ -84,7 +84,7 @@ const generateImageFromPrompt = async (prompt) => {
         user: "ia",
         response: "Response of IA",
         prompt: prompt,
-        image:"/assets/images/generator-img/photo-7.png",
+        image:"/assets/images/generator-img/bioguera.jpeg",
         loading: false,
       });
       setDiscussions(discussion_temp);
