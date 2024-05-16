@@ -12,6 +12,7 @@ const inter = Inter({ subsets: ["latin"] });
 
 export default function Home() {
   const [prompt,setPrompt]=useState('');
+  const [showKeyboard,setShowKeyboard]=useState(false);
   const [discussions,setDiscussions]=useState([]);
   
 
@@ -90,9 +91,9 @@ export default function Home() {
                         setPrompt(e.target.value);
                       }}
                     ></textarea>
-                    <div className="left-icons"> <div title="BlaymaxAI" className="form-icon icon-gpt">
-                        <i className="feather-aperture"></i>
-                      </div>
+                    <div className="left-icons"> <button type="button" onClick={()=>{ setShowKeyboard(!showKeyboard) }} title="Clavier Fon" className="form-icon icon-keyboard">
+                        <i className="feather-type"></i>
+                      </button>
                     </div>
                     <div className="right-icons">
                       <div
@@ -134,12 +135,13 @@ export default function Home() {
                       </button>
                     </div>
                   </form>
-                  <FonKeyBoard onKeyup={(c)=>{
+                  {showKeyboard &&  <FonKeyBoard onKeyup={(c)=>{
                     setPrompt((precedPrompt)=>{
                       const p=precedPrompt+c;
                       return p;
                     })
-                  } } />
+                  } } /> }
+                 
                   <p className="b3 small-text">
                     BlaymaxAI can make mistakes. Consider checking important
                     information.
@@ -428,7 +430,7 @@ export default function Home() {
         {/* <!--Like Section Modal HTML --> */}
         <div
           id="likeModal"
-          className="modal rbt-modal-box like-modal fade"
+          className="modal rbt-modal-box like-modal fade block"
           tabindex="-1"
         >
           <div className="modal-dialog modal-dialog-centered">
