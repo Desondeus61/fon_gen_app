@@ -24,7 +24,7 @@ export default function BotMessage({response,prompt,image,loading=true}){
                           </div>
                           <div className="chat-content">
                             <h6 className="title color-text-off mb--0">
-                              Generating answers for you…
+                              Generating image ....
                             </h6>
                           </div>
                         </div>) : (
@@ -44,28 +44,19 @@ export default function BotMessage({response,prompt,image,loading=true}){
                               </h5>
                             </div>
                             <div className="img-box-grp mb--20">
-                              <div className="img-box">
+                              {image && <div className="img-box">
                                 <img
                                   className="w-100 radius"
-                                  src="/assets/images/generator-img/photo-7.png"
+                                  src={image}
                                   alt="Image Generation"
                                 />
                                 <button className="download-btn btn-default btn-small bg-solid-primary">
                                   <i className="feather-download"></i>
                                   <span>Download</span>
                                 </button>
-                              </div>
-                              <div className="img-box">
-                                <img
-                                  className="w-100 radius"
-                                  src="/assets/images/generator-img/photo-13.png"
-                                  alt="Image Generation"
-                                />
-                                <button className="download-btn btn-default btn-small bg-solid-primary">
-                                  <i className="feather-download"></i>
-                                  <span>Download</span>
-                                </button>
-                              </div>
+                              </div> }
+                              
+                              
                             </div>
                             <div className="reaction-section">
                               <div className="btn-grp">

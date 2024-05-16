@@ -17,7 +17,7 @@ import FormData from "form-data";
 export default function Home() {
   const [prompt, setPrompt] = useState("");
   const [showKeyboard, setShowKeyboard] = useState(false);
-  const [showInfo, setShowInfo] = useState(true);
+  const [showInfo, setShowInfo] = useState(false);
   const [discussions, setDiscussions] = useState([]);
 
 
@@ -31,12 +31,12 @@ const generateImageFromPrompt = async (prompt) => {
 
   try {
     const response = await axios.post(
-      "https://api.stability.ai/v2beta/stable-image/generate/sd3",
+      "https://api.stability.ai/v2beta/stable-image/generate/core",
       formData,
       {
         headers: {
-          Authorization: `Bearer sk-svrR7cb2mWDAf88m8QJMPYKfXSOCkDT06TzC6s9aOnwQv0sl`,
-          ...formData.getHeaders()
+          Authorization: `Bearer sk-8X8TBCUcbiIsWGshYpYyBSFWkBxKsQ9oVAB96Qe7zdmk1xuS`,
+          "Content-Type": `multipart/form-data; boundary=${formData._boundary}`
         },
         responseType: "arraybuffer"
       }
@@ -67,7 +67,8 @@ const generateImageFromPrompt = async (prompt) => {
   .then((imageDataUrl) => {
     if (imageDataUrl) {
       // Utilisez l'URL de l'image pour l'afficher dans votre application
-      console.log("Image URL:", );
+      console.log("Image URL:",imageDataUrl );
+      discussion_temp.pop();
       discussion_temp.push({
         user: "ia",
         response: "Response of IA",
@@ -75,14 +76,25 @@ const generateImageFromPrompt = async (prompt) => {
         image:imageDataUrl,
         loading: false,
       });
+      setDiscussions(discussion_temp);
     } else {
       console.log("Failed to generate image.");
+      discussion_temp.pop();
+      discussion_temp.push({
+        user: "ia",
+        response: "Response of IA",
+        prompt: prompt,
+        image:"/assets/images/generator-img/photo-7.png",
+        loading: false,
+      });
+      setDiscussions(discussion_temp);
     }
   })
   .catch((error) => {
     console.error("Error:", error);
+    
   });
-    setDiscussions(discussion_temp);
+    
     setPrompt("");
   }
   return (
@@ -129,6 +141,7 @@ const generateImageFromPrompt = async (prompt) => {
                               message={message?.response}
                               prompt={message?.prompt}
                               loading={message?.loading}
+                              image={message?.image}
                             />
                           );
                         }
@@ -198,7 +211,9 @@ const generateImageFromPrompt = async (prompt) => {
                         className="form-icon icon-send"
                         type="button"
                         id="sendButton"
-                        onClick={() => generate_image(prompt)}
+                        onClick={async () => {
+                          await generate_image(prompt)
+                        }}
                         data-bs-toggle="tooltip"
                         data-bs-placement="top"
                         data-bs-custom-className="custom-tooltip"
