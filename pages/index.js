@@ -1,118 +1,562 @@
 import Image from "next/image";
 import { Inter } from "next/font/google";
-
+import Header from "@/components/layouts/header";
+import PageLoader from "@/components/layouts/loader";
+import { LeftSideBar } from "@/components/layouts/leftSidebar";
+import UserPrompt from "@/components/chat/UserPrompt";
+import BotMessage from "@/components/chat/BotMessage";
+import react,{useState} from "react";
+import FonKeyBoard from "@/components/clavier/KeyBoard";
+import EmptyChat from "@/components/chat/EmptyChat";
 const inter = Inter({ subsets: ["latin"] });
 
 export default function Home() {
+  const [prompt,setPrompt]=useState('');
+  const [discussions,setDiscussions]=useState([]);
+  
+
+  async function generate_image(prompt){
+    const discussion_temp=discussions;
+    discussion_temp.push({user:'user',prompt: prompt});
+    setDiscussions(discussion_temp);
+    discussion_temp.push({user:'ia',prompt: prompt,loading:true});
+    //user prompt
+
+    //ia generate
+    try {
+      const request=await fetch('http://localhost:8000/generate-image',{
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        credentials: "include",
+      });
+      const response= await request.json();
+      console.log(response);
+    } catch (error) {
+      
+    }
+   
+    discussion_temp.pop();
+    discussion_temp.push({user:'ia',response: 'Response of IA',prompt: prompt,loading:false});
+    setDiscussions(discussion_temp);
+    setPrompt('');
+
+
+  }
   return (
-    <main
-      className={`flex min-h-screen flex-col items-center justify-between p-24 ${inter.className}`}
-    >
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">pages/index.js</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
+    <>
+      <main className="page-wrapper rbt-dashboard-page">
+        <div className="rbt-panel-wrapper">
+          <Header />
+
+          {/* <!-- Imroz Preloader --> */}
+          {/* <PageLoader /> */}
+
+          {/* <!-- Start Left panel --> */}
+          {/* //sideleft */}
+          {/* <LeftSideBar /> */}
+          {/* <!-- End Left panel --> */}
+
+          {/* <!-- Main content --> */}
+          <div className="rbt-main-content">
+            <div className="rbt-daynamic-page-content">
+              {/* <!-- Dashboard Center Content --> */}
+              <div className="rbt-dashboard-content">
+                <div className="content-page">
+                  <div className="chat-box-list pt--30" id="chatContainer">
+                    {/* <!-- Image Generator --> */}
+                    {discussions.length >0 ? discussions.map((message)=>{
+                      if(message?.user=='user' ){
+                        return <UserPrompt message={message?.prompt} prompt={message?.prompt} />;
+                      }else{
+                        return (<BotMessage message={message?.response} prompt={message?.prompt} loading={message?.loading} />)
+                      }
+                    }) : (
+                      <EmptyChat onClickSuggested={(m)=>{setPrompt(m)}} />
+                    ) }
+                  </div>
+                </div>
+
+                <div className="rbt-static-bar">
+                  <form className="new-chat-form border-gradient"  >
+                    <textarea
+                      id="txtarea"
+                      rows="1"
+                      value={prompt}
+                      placeholder="Send a message..."
+                      onChange={(e)=>{
+                        console.log(e.target.value);
+                        setPrompt(e.target.value);
+                      }}
+                    ></textarea>
+                    <div className="left-icons"> <div title="BlaymaxAI" className="form-icon icon-gpt">
+                        <i className="feather-aperture"></i>
+                      </div>
+                    </div>
+                    <div className="right-icons">
+                      <div
+                        className="form-icon icon-plus"
+                        data-bs-toggle="tooltip"
+                        data-bs-placement="top"
+                        data-bs-custom-className="custom-tooltip"
+                        data-bs-title="Choose File"
+                      >
+                        <input
+                          type="file"
+                          className="input-file"
+                          name="myfile"
+                          multiple
+                        />
+                        <i className="feather-plus-circle"></i>
+                      </div>
+                      <button
+                        className="form-icon icon-mic"
+                        data-bs-toggle="tooltip"
+                        type="button"
+                        data-bs-placement="top"
+                        data-bs-custom-className="custom-tooltip"
+                        data-bs-title="Voice Search"
+                      >
+                        <i className="feather-mic"></i>
+                      </button>
+                      <button
+                        className="form-icon icon-send"
+                        type="button"
+                        id="sendButton"
+                        onClick={()=>generate_image(prompt)}
+                        data-bs-toggle="tooltip"
+                        data-bs-placement="top"
+                        data-bs-custom-className="custom-tooltip"
+                        data-bs-title="Send message"
+                      >
+                        <i className="feather-send"></i>
+                      </button>
+                    </div>
+                  </form>
+                  <FonKeyBoard onKeyup={(c)=>{
+                    setPrompt((precedPrompt)=>{
+                      const p=precedPrompt+c;
+                      return p;
+                    })
+                  } } />
+                  <p className="b3 small-text">
+                    BlaymaxAI can make mistakes. Consider checking important
+                    information.
+                  </p>
+                </div>
+              </div>
+
+              {/* <!-- Dashboard Right Content --> */}
+
+            </div>
+          </div>
         </div>
-      </div>
-
-      <div className="relative flex place-items-center before:absolute before:h-[300px] before:w-full sm:before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full sm:after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700/10 after:dark:from-sky-900 after:dark:via-[#0141ff]/40 before:lg:h-[360px]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className="mb-32 grid text-center lg:max-w-5xl lg:w-full lg:mb-0 lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
+        {/* <!--New Chat Section Modal HTML --> */}
+        <div
+          id="newchatModal"
+          className="modal rbt-modal-box copy-modal fade"
+          tabindex="-1"
         >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content wrapper top-flashlight light-xl">
+              <div
+                className="section-title text-center mb--30 sal-animate"
+                data-sal="slide-up"
+                data-sal-duration="400"
+                data-sal-delay="150"
+              >
+                <h3 className="title mb--0 w-600">Unlock the power of AI</h3>
+              </div>
+              <div className="genarator-section">
+                <ul className="genarator-card-group">
+                  <li>
+                    <a href="text-generator.html" className="genarator-card">
+                      <div className="inner">
+                        <div className="left-align">
+                          <div className="img-bar">
+                            <img
+                              src="/assets/images/generator-icon/text.png"
+                              alt="AI Generator"
+                            />
+                          </div>
+                          <h5 className="title">Text Generator</h5>
+                        </div>
+                        <div className="right-align">
+                          <div className="icon-bar">
+                            <i data-feather="arrow-right"></i>
+                          </div>
+                        </div>
+                      </div>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="image-generator.html" className="genarator-card">
+                      <div className="inner">
+                        <div className="left-align">
+                          <div className="img-bar">
+                            <img
+                              src="/assets/images/generator-icon/photo.png"
+                              alt="AI Generator"
+                            />
+                          </div>
+                          <h5 className="title">Image Generator</h5>
+                        </div>
+                        <div className="right-align">
+                          <div className="icon-bar">
+                            <i data-feather="arrow-right"></i>
+                          </div>
+                        </div>
+                      </div>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="image-editor.html" className="genarator-card">
+                      <div className="inner">
+                        <div className="left-align">
+                          <div className="img-bar">
+                            <img
+                              src="/assets/images/generator-icon/photo-editor.png"
+                              alt="AI Generator"
+                            />
+                          </div>
+                          <h5 className="title">Photo Editor</h5>
+                        </div>
+                        <div className="right-align">
+                          <div className="icon-bar">
+                            <i data-feather="arrow-right"></i>
+                          </div>
+                        </div>
+                      </div>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="code-generator.html" className="genarator-card">
+                      <div className="inner">
+                        <div className="left-align">
+                          <div className="img-bar">
+                            <img
+                              src="/assets/images/generator-icon/code-editor.png"
+                              alt="AI Generator"
+                            />
+                          </div>
+                          <h5 className="title">Code Generator</h5>
+                        </div>
+                        <div className="right-align">
+                          <div className="icon-bar">
+                            <i data-feather="arrow-right"></i>
+                          </div>
+                        </div>
+                      </div>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="text-generator.html" className="genarator-card">
+                      <div className="inner">
+                        <div className="left-align">
+                          <div className="img-bar">
+                            <img
+                              src="/assets/images/generator-icon/text-voice.png"
+                              alt="AI Generator"
+                            />
+                          </div>
+                          <h5 className="title">Text to speech</h5>
+                        </div>
+                        <div className="right-align">
+                          <div className="icon-bar">
+                            <i data-feather="arrow-right"></i>
+                          </div>
+                        </div>
+                      </div>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="text-generator.html" className="genarator-card">
+                      <div className="inner">
+                        <div className="left-align">
+                          <div className="img-bar">
+                            <img
+                              src="/assets/images/generator-icon/voice.png"
+                              alt="AI Generator"
+                            />
+                          </div>
+                          <h5 className="title">Speech to text</h5>
+                        </div>
+                        <div className="right-align">
+                          <div className="icon-bar">
+                            <i data-feather="arrow-right"></i>
+                          </div>
+                        </div>
+                      </div>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="vedio-generator.html" className="genarator-card">
+                      <div className="inner">
+                        <div className="left-align">
+                          <div className="img-bar">
+                            <img
+                              src="/assets/images/generator-icon/video-camera.png"
+                              alt="AI Generator"
+                            />
+                          </div>
+                          <h5 className="title">Vedio Generator</h5>
+                        </div>
+                        <div className="right-align">
+                          <div className="icon-bar">
+                            <i data-feather="arrow-right"></i>
+                          </div>
+                        </div>
+                      </div>
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="#"
+                      className="genarator-card disabled"
+                      tabindex="-1"
+                    >
+                      <div className="inner">
+                        <div className="left-align">
+                          <div className="img-bar">
+                            <img
+                              src="/assets/images/generator-icon/website-design.png"
+                              alt="AI Generator"
+                            />
+                          </div>
+                          <h5 className="title">Website Generator</h5>
+                        </div>
+                        <div className="right-align">
+                          <span className="rainbow-badge-card">Coming</span>
+                        </div>
+                      </div>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="code-generator.html" className="genarator-card">
+                      <div className="inner">
+                        <div className="left-align">
+                          <div className="img-bar">
+                            <img
+                              src="/assets/images/generator-icon/code-editor.png"
+                              alt="AI Generator"
+                            />
+                          </div>
+                          <h5 className="title">HTML Generator</h5>
+                        </div>
+                        <div className="right-align">
+                          <div className="icon-bar">
+                            <i data-feather="arrow-right"></i>
+                          </div>
+                        </div>
+                      </div>
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="text-generator.html"
+                      className="genarator-card disabled"
+                      tabindex="-1"
+                    >
+                      <div className="inner">
+                        <div className="left-align">
+                          <div className="img-bar">
+                            <img
+                              src="/assets/images/generator-icon/document.png"
+                              alt="AI Generator"
+                            />
+                          </div>
+                          <h5 className="title">Chat with Documents</h5>
+                        </div>
+                        <div className="right-align">
+                          <span className="rainbow-badge-card">Coming</span>
+                        </div>
+                      </div>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="email-generator.html" className="genarator-card">
+                      <div className="inner">
+                        <div className="left-align">
+                          <div className="img-bar">
+                            <img
+                              src="/assets/images/generator-icon/email.png"
+                              alt="AI Generator"
+                            />
+                          </div>
+                          <h5 className="title">Email Writer</h5>
+                        </div>
+                        <div className="right-align">
+                          <div className="icon-bar">
+                            <i data-feather="arrow-right"></i>
+                          </div>
+                        </div>
+                      </div>
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="#"
+                      className="genarator-card disabled"
+                      tabindex="-1"
+                    >
+                      <div className="inner">
+                        <div className="left-align">
+                          <div className="img-bar">
+                            <img
+                              src="/assets/images/generator-icon/lyrics.png"
+                              alt="AI Generator"
+                            />
+                          </div>
+                          <h5 className="title">Lyrics Generator</h5>
+                        </div>
+                        <div className="right-align">
+                          <span className="rainbow-badge-card">Coming</span>
+                        </div>
+                      </div>
+                    </a>
+                  </li>
+                </ul>
+              </div>
+              <button className="close-button" data-bs-dismiss="modal">
+                <i className="feather-x"></i>
+              </button>
+            </div>
+          </div>
+        </div>
 
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
+        {/* <!--Like Section Modal HTML --> */}
+        <div
+          id="likeModal"
+          className="modal rbt-modal-box like-modal fade"
+          tabindex="-1"
         >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content wrapper top-flashlight leftside light-xl">
+              <h5 className="title">Provide additional feedback</h5>
+              <div className="chat-form">
+                <div className="border-gradient text-form">
+                  <textarea rows="6" placeholder="Send a message..."></textarea>
+                </div>
+              </div>
+              <div className="bottom-btn mt--20">
+                <a className="btn-default btn-small round" href="#">
+                  Send Feedback
+                </a>
+              </div>
+              <button className="close-button" data-bs-dismiss="modal">
+                <i className="feather-x"></i>
+              </button>
+            </div>
+          </div>
+        </div>
 
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
+        {/* <!--DisLike Section Modal HTML --> */}
+        <div
+          id="dislikeModal"
+          className="modal rbt-modal-box dislike-modal fade"
+          tabindex="-1"
         >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Discover and deploy boilerplate example Next.js&nbsp;projects.
-          </p>
-        </a>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content wrapper top-flashlight leftside light-xl">
+              <h5 className="title">Why do you like this response?</h5>
+              <select
+                className="form-select"
+                multiple
+                aria-label="multiple select example"
+              >
+                <option selected>Irrelevant</option>
+                <option value="2">Offensive</option>
+                <option value="3">Not Correct</option>
+              </select>
+              <div className="chat-form">
+                <h6 className="title">Provide your feedback</h6>
+                <div className="border-gradient text-form">
+                  <textarea rows="6" placeholder="Send a message..."></textarea>
+                </div>
+              </div>
+              <div className="bottom-btn mt--20">
+                <a className="btn-default btn-small round" href="#">
+                  Send Feedback
+                </a>
+              </div>
+              <button className="close-button" data-bs-dismiss="modal">
+                <i className="feather-x"></i>
+              </button>
+            </div>
+          </div>
+        </div>
 
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
+        {/* <!--Share Section Modal HTML --> */}
+        <div
+          id="shareModal"
+          className="modal rbt-modal-box share-modal fade"
+          tabindex="-1"
         >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50 text-balance`}>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content wrapper modal-small top-flashlight leftside light-xl">
+              <h5 className="title">Share</h5>
+              <ul className="social-icon social-default transparent-with-border mb--20">
+                <li
+                  data-sal="slide-up"
+                  data-sal-duration="400"
+                  data-sal-delay="200"
+                >
+                  <a href="https://www.facebook.com/">
+                    <i className="feather-facebook"></i>
+                  </a>
+                </li>
+                <li
+                  data-sal="slide-up"
+                  data-sal-duration="400"
+                  data-sal-delay="300"
+                >
+                  <a href="https://www.twitter.com/">
+                    <i className="feather-twitter"></i>
+                  </a>
+                </li>
+                <li
+                  data-sal="slide-up"
+                  data-sal-duration="400"
+                  data-sal-delay="400"
+                >
+                  <a href="https://www.instagram.com/">
+                    <i className="feather-instagram"></i>
+                  </a>
+                </li>
+                <li
+                  data-sal="slide-up"
+                  data-sal-duration="400"
+                  data-sal-delay="500"
+                >
+                  <a href="https://www.linkdin.com/">
+                    <i className="feather-linkedin"></i>
+                  </a>
+                </li>
+              </ul>
+              <div className="chat-form">
+                <div className="border-gradient text-form d-flex align-items-center">
+                  <input
+                    type="text"
+                    className="copy-link-input"
+                    value="https://www.youtube.com/"
+                    readonly
+                  />
+                  <button
+                    className="btn-default bg-solid-primary"
+                    type="submit"
+                  >
+                    Copy
+                  </button>
+                </div>
+              </div>
+              <button className="close-button" data-bs-dismiss="modal">
+                <i className="feather-x"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </main>
+    </>
   );
 }
